@@ -6,7 +6,7 @@ A brief description of what this project does and its purpose.
 
 1. Clone the repository:
    ```
-   git clone <repository-url>
+   git clone https://github.com/Sarthak-Vishnu/B286266_code.git
    ```
 2. Navigate to the project directory:
    ```
