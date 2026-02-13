@@ -36,9 +36,10 @@ Note:
 
 '''
 Improvements (to be implemented)
-1. Implement [Tabu Search ✅] and [Simulated Annealing❗]
-2. [CAB✅, TR❗½ done i.e. code, RGP❗½ done i.e. code] Experiment with Tabu_tenure values and max_iter for each dataset.
-3. Implement algo for TR40, TR55, and RGP100
+0. Implement final temperature as a part of stopping condition
+1. Write main() with required param as assign. brief's table
+2. [CAB✅, TR✅done i.e. code, RGP✅done i.e. code] Experiment with Tabu_tenure values and max_iter for each dataset.
+3. ✅Implement algo for TR40, TR55, and RGP100
 4. 
 
 
@@ -49,6 +50,7 @@ Completed:
 > ✅ [2 are enough] Implement other neighbourhood generation functions (all 4 from WS1 slides)
 > ✅ add exec_time as return arg for Tabu Search algo
 > ✅ add '# of iterations' of completion of algo, as return arg for Tabu Search algo
+> Implement [Tabu Search ✅] and [Simulated Annealing  ✅]
 
 
 '''
@@ -177,15 +179,25 @@ def hlp_graph(array):
     # plt.close(fig)
     return fig          # just return, do NOT call plt.show()
 
-def cost_evaluation(array, w, c, alpha):  
-    cost = 0
-    
-    for i in range(len(array)):
-        for j in range(len(array)):
-            
-            cost += w.iloc[i, j] * (c.iloc[i, array[i]-1] + alpha * c.iloc[array[i]-1, array[j]-1] + c.iloc[array[j]-1, j])
+def cost_evaluation(array, w, c, alpha):
+    """Vectorized cost evaluation.
 
-    return cost
+    This keeps the same formula as the nested loops but uses NumPy for speed.
+    """
+    # Convert to NumPy arrays (handles pandas DataFrame or ndarray inputs)
+    w_np = w.to_numpy() if hasattr(w, "to_numpy") else np.asarray(w)
+    c_np = c.to_numpy() if hasattr(c, "to_numpy") else np.asarray(c)
+
+    hubs = np.asarray(array, dtype=np.int64) - 1
+    n = hubs.size
+    idx = np.arange(n)
+
+    term_origin = c_np[idx, hubs]  # c[i, hub_i]
+    term_dest = c_np[hubs, idx]    # c[hub_j, j] for each j
+    hub_to_hub = c_np[np.ix_(hubs, hubs)]  # c[hub_i, hub_j]
+
+    cost = (w_np * (term_origin[:, None] + alpha * hub_to_hub + term_dest[None, :])).sum()
+    return float(cost)
 
 def normalize_flow(w):
     """
@@ -195,11 +207,8 @@ def normalize_flow(w):
     Returns:
         pd.DataFrame: Normalized flow matrix
     """
-    total_flow = 0
-    for i in range(len(w)):
-        for j in range(len(w)):
-            total_flow += w.iloc[i, j]
-    
+    w_np = w.to_numpy() if hasattr(w, "to_numpy") else np.asarray(w)
+    total_flow = w_np.sum()
     return w / total_flow
 
 # FUNCTION: Neighborhood Structure 1

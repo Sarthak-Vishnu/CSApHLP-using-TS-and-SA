@@ -138,7 +138,7 @@ def test_fixed_parameters(dataset_name, p, tabu_tenure_range, num_runs=5):
         'CAB25': {'max_iterations': 1200},
         'TR40': {'max_iterations': 1000},
         'TR55': {'max_iterations': 1000},
-        'RGP100': {'max_iterations': 2000}
+        'RGP100': {'max_iterations': 1000}
     }
     
     alpha = 0.3
@@ -215,7 +215,7 @@ def main():
         'CAB25': 1200,
         'TR40': 1000,
         'TR55': 1000,
-        'RGP100': 2000
+        'RGP100': 1000
     }
     
     # Test configurations
@@ -237,62 +237,62 @@ def main():
             f"RGP100: {fixed_max_iterations['RGP100']}")
     
     # Test CAB10 with p=3
-    # results_cab10_p3 = test_fixed_parameters('CAB10', p=3, tabu_tenure_range=[4, 5, 6, 7], num_runs=2)
-    # all_results.append(results_cab10_p3)
-    # save_results(results_cab10_p3, 'tabu_CAB10_p3_results.csv')
+    results_cab10_p3 = test_fixed_parameters('CAB10', p=3, tabu_tenure_range=[4, 5, 6, 7], num_runs=2)
+    all_results.append(results_cab10_p3)
+    save_results(results_cab10_p3, 'tabu_CAB10_p3_results.csv')
     
     # Test CAB10 with p=5
-    # results_cab10_p5 = test_fixed_parameters('CAB10', p=5, tabu_tenure_range=[6, 7, 8, 9, 10], num_runs=2)
-    # all_results.append(results_cab10_p5)
-    # save_results(results_cab10_p5, 'tabu_CAB10_p5_results.csv')
+    results_cab10_p5 = test_fixed_parameters('CAB10', p=5, tabu_tenure_range=[6, 7, 8, 9], num_runs=2)
+    all_results.append(results_cab10_p5)
+    save_results(results_cab10_p5, 'tabu_CAB10_p5_results.csv')
     
     # Test CAB20 with p=3
-    # results_cab20_p3 = test_fixed_parameters('CAB20', p=3, tabu_tenure_range=[5, 6, 7], num_runs=2)
-    # all_results.append(results_cab20_p3)
-    # save_results(results_cab20_p3, 'tabu_CAB20_p3_results.csv')
+    results_cab20_p3 = test_fixed_parameters('CAB20', p=3, tabu_tenure_range=[4, 5, 6, 7], num_runs=2)
+    all_results.append(results_cab20_p3)
+    save_results(results_cab20_p3, 'tabu_CAB20_p3_results.csv')
     
     # Test CAB20 with p=5
-    # results_cab20_p5 = test_fixed_parameters('CAB20', p=5, tabu_tenure_range=[9, 10, 11], num_runs=2)
-    # all_results.append(results_cab20_p5)
-    # save_results(results_cab20_p5, 'tabu_CAB20_p5_results.csv')
+    results_cab20_p5 = test_fixed_parameters('CAB20', p=5, tabu_tenure_range=[8, 9, 10, 11], num_runs=2)
+    all_results.append(results_cab20_p5)
+    save_results(results_cab20_p5, 'tabu_CAB20_p5_results.csv')
     
     # Test CAB25 with p=3
-    # results_cab25_p3 = test_fixed_parameters('CAB25', p=3, tabu_tenure_range=[5, 7, 9], num_runs=2)
-    # all_results.append(results_cab25_p3)
-    # save_results(results_cab25_p3, 'tabu_CAB25_p3_results.csv')
+    results_cab25_p3 = test_fixed_parameters('CAB25', p=3, tabu_tenure_range=[5, 6, 7, 8], num_runs=2)
+    all_results.append(results_cab25_p3)
+    save_results(results_cab25_p3, 'tabu_CAB25_p3_results.csv')
     
     # Test CAB25 with p=5
-    # results_cab25_p5 = test_fixed_parameters('CAB25', p=5, tabu_tenure_range=[7, 8, 9, 10], num_runs=2)
-    # all_results.append(results_cab25_p5)
-    # save_results(results_cab25_p5, 'tabu_CAB25_p5_results.csv')
+    results_cab25_p5 = test_fixed_parameters('CAB25', p=5, tabu_tenure_range=[8, 9, 10, 11], num_runs=2)
+    all_results.append(results_cab25_p5)
+    save_results(results_cab25_p5, 'tabu_CAB25_p5_results.csv')
 
     # Test TR40 with p=3
-    results_tr40_p3 = test_fixed_parameters('TR40', p=3, tabu_tenure_range=[7, 8, 9], num_runs=2)
+    results_tr40_p3 = test_fixed_parameters('TR40', p=3, tabu_tenure_range=[7, 8, 9, 10], num_runs=5)
     all_results.append(results_tr40_p3)
     save_results(results_tr40_p3, 'tabu_TR40_p3_results.csv')
     
     # Test TR40 with p=5
-    results_tr40_p5 = test_fixed_parameters('TR40', p=5, tabu_tenure_range=[10, 11, 12], num_runs=2)
+    results_tr40_p5 = test_fixed_parameters('TR40', p=5, tabu_tenure_range=[10, 11, 12], num_runs=5)
     all_results.append(results_tr40_p5)
     save_results(results_tr40_p5, 'tabu_TR40_p5_results.csv')
     
     # Test TR55 with p=5
-    results_tr55_p5 = test_fixed_parameters('TR55', p=5, tabu_tenure_range=[11, 12, 13], num_runs=2)
+    results_tr55_p5 = test_fixed_parameters('TR55', p=5, tabu_tenure_range=[11, 12, 13], num_runs=5)
     all_results.append(results_tr55_p5)
     save_results(results_tr55_p5, 'tabu_TR55_p5_results.csv')
     
     # Test TR55 with p=7
-    results_tr55_p7 = test_fixed_parameters('TR55', p=7, tabu_tenure_range=[13, 14, 15], num_runs=2)
+    results_tr55_p7 = test_fixed_parameters('TR55', p=7, tabu_tenure_range=[12, 13, 14, 15], num_runs=5)
     all_results.append(results_tr55_p7)
     save_results(results_tr55_p7, 'tabu_TR55_p7_results.csv')
     
     # # Test RGP100 with p=9
-    # results_rgp100_p9 = test_fixed_parameters('RGP100', p=9, tabu_tenure_range=[17, 18, 19, 20], num_runs=2)
+    # results_rgp100_p9 = test_fixed_parameters('RGP100', p=9, tabu_tenure_range=[17, 18, 19, 20], num_runs=5)
     # all_results.append(results_rgp100_p9)
     # save_results(results_rgp100_p9, 'tabu_RGP100_p9_results.csv')
     
     # # Test RGP100 with p=12
-    # results_rgp100_p12 = test_fixed_parameters('RGP100', p=12, tabu_tenure_range=[21, 22, 23, 24], num_runs=2)
+    # results_rgp100_p12 = test_fixed_parameters('RGP100', p=12, tabu_tenure_range=[21, 22, 23, 24], num_runs=5)
     # all_results.append(results_rgp100_p12)
     # save_results(results_rgp100_p12, 'tabu_RGP100_p12_results.csv')
     
