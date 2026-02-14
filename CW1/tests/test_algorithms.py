@@ -180,4 +180,58 @@ def test_simulated_annealing_different_temperatures(cab10_data):
         assert cost > 0
 
 
+def test_selected_hub_capacities_returns_levels(cab10_data):
+    """selected_hub_capacities should return hub->level mapping for feasible solution."""
+    w, _ = cab10_data
+    solution = [4, 3, 3, 4, 4, 4, 7, 4, 4, 7]
+
+    hub_levels, infeasible = selected_hub_capacities(solution, w, dataset_name="CAB10")
+
+    assert infeasible is False
+    assert set(hub_levels.keys()) == {4, 3, 7}
+    assert all(level in {"L1", "L2", "L3"} for level in hub_levels.values())
+
+
+def test_selected_hub_capacities_reports_infeasible(cab10_data):
+    """selected_hub_capacities should flag infeasible when capacities are too small."""
+    w, _ = cab10_data
+    solution = [4, 3, 3, 4, 4, 4, 7, 4, 4, 7]
+    tiny_capacities = {"L1": 1e-6, "L2": 2e-6, "L3": 3e-6}
+
+    hub_levels, infeasible = selected_hub_capacities(solution, w, capacities=tiny_capacities)
+
+    assert infeasible is True
+    assert hub_levels == {}
+
+
+def test_cost_evaluation_breakdown_matches_total(cab10_data):
+    """Return breakdown should satisfy total = network + setup and include hub levels."""
+    w, c = cab10_data
+    solution = [4, 3, 3, 4, 4, 4, 7, 4, 4, 7]
+
+    total, network, setup, hub_levels = cost_evaluation(
+        solution,
+        w,
+        c,
+        0.7,
+        dataset_name="cab10",
+        return_breakdown=True,
+    )
+
+    assert total == pytest.approx(network + setup)
+    assert setup >= 0
+    assert set(hub_levels.keys()) == {4, 3, 7}
+
+
+def test_cost_evaluation_returns_inf_for_infeasible(cab10_data):
+    """Cost should be infinite when no capacity level can handle hub load."""
+    w, c = cab10_data
+    solution = [4, 3, 3, 4, 4, 4, 7, 4, 4, 7]
+    tiny_capacities = {"L1": 1e-6, "L2": 2e-6, "L3": 3e-6}
+
+    value = cost_evaluation(solution, w, c, 0.7, capacities=tiny_capacities)
+
+    assert value == float("inf")
+
+
 

@@ -1,5 +1,5 @@
 """
-Module: parameter_tuning.py
+Module: parameter_tuning_tabu.py
 Description: Parameter tuning for Tabu Search algorithm to find optimal settings
 
 This module tests different parameter combinations for the Tabu Search algorithm
@@ -11,6 +11,16 @@ import os
 import time
 from .algorithms import *
 from .functions import *
+
+
+def format_selected_hub_capacities(solution, w, dataset_name):
+    """Format selected hub capacities as '4(L3); 3(L1); 7(L1)' for reporting."""
+    hub_levels, infeasible = selected_hub_capacities(solution, w, dataset_name=dataset_name)
+    if infeasible:
+        return "INFEASIBLE"
+    if not hub_levels:
+        return "N/A"
+    return "; ".join([f"{hub}({level})" for hub, level in hub_levels.items()])
 
 def load_dataset(dataset_name='CAB10'):
     """
@@ -135,7 +145,7 @@ def test_fixed_parameters(dataset_name, p, tabu_tenure_range, num_runs=5):
     fixed_params = {
         'CAB10': {'max_iterations': 200},
         'CAB20': {'max_iterations': 500},
-        'CAB25': {'max_iterations': 1200},
+        'CAB25': {'max_iterations': 800},
         'TR40': {'max_iterations': 1000},
         'TR55': {'max_iterations': 1000},
         'RGP100': {'max_iterations': 1000}
@@ -165,7 +175,8 @@ def test_fixed_parameters(dataset_name, p, tabu_tenure_range, num_runs=5):
             solution, cost, exec_time, total_iterations = tabu_search(
                 n, p, w, c, alpha, 
                 max_iterations=max_iterations, 
-                tabu_tenure=tenure
+                tabu_tenure=tenure,
+                dataset_name=dataset_name
             )
             costs.append(cost)
             times.append(exec_time)
@@ -175,6 +186,7 @@ def test_fixed_parameters(dataset_name, p, tabu_tenure_range, num_runs=5):
         best_cost = min(costs)
         best_cost_idx = costs.index(best_cost)
         best_solution = solutions[best_cost_idx]
+        selected_capacities = format_selected_hub_capacities(best_solution, w, dataset_name)
         total_iterations_for_best_cost = total_iterations_list[best_cost_idx]
         avg_cost = sum(costs) / len(costs)
         std_cost = (sum((x - avg_cost)**2 for x in costs) / len(costs))**0.5
@@ -187,6 +199,7 @@ def test_fixed_parameters(dataset_name, p, tabu_tenure_range, num_runs=5):
             'alpha': alpha,
             'tabu_tenure': tenure,
             'best_solution': best_solution,
+            'selected_hub_capacities': selected_capacities,
             'best_cost': best_cost,
             'avg_cost': avg_cost,
             'std_cost': std_cost,
@@ -196,6 +209,7 @@ def test_fixed_parameters(dataset_name, p, tabu_tenure_range, num_runs=5):
         })
         
         print(f"  Best Solution: {best_solution}")
+        print(f"  Selected Hub Capacities: {selected_capacities}")
         print(f"  Best Cost: {best_cost:.4f}, Avg Cost: {avg_cost:.4f}, "
               f"Std Dev: {std_cost:.4f}, Avg Time: {avg_time:.4f}s, "
               f"Avg Total Iterations: {sum(total_iterations_list) / len(total_iterations_list):.1f}, "
@@ -212,7 +226,7 @@ def main():
     fixed_max_iterations = {
         'CAB10': 200,
         'CAB20': 500,
-        'CAB25': 1200,
+        'CAB25': 800,
         'TR40': 1000,
         'TR55': 1000,
         'RGP100': 1000
@@ -237,44 +251,44 @@ def main():
             f"RGP100: {fixed_max_iterations['RGP100']}")
     
     # Test CAB10 with p=3
-    results_cab10_p3 = test_fixed_parameters('CAB10', p=3, tabu_tenure_range=[4, 5, 6, 7], num_runs=2)
+    results_cab10_p3 = test_fixed_parameters('CAB10', p=3, tabu_tenure_range=[4, 5, 6, 7], num_runs=5)
     all_results.append(results_cab10_p3)
     save_results(results_cab10_p3, 'tabu_CAB10_p3_results.csv')
     
     # Test CAB10 with p=5
-    results_cab10_p5 = test_fixed_parameters('CAB10', p=5, tabu_tenure_range=[6, 7, 8, 9], num_runs=2)
+    results_cab10_p5 = test_fixed_parameters('CAB10', p=5, tabu_tenure_range=[6, 7, 8, 9], num_runs=5)
     all_results.append(results_cab10_p5)
     save_results(results_cab10_p5, 'tabu_CAB10_p5_results.csv')
     
     # Test CAB20 with p=3
-    results_cab20_p3 = test_fixed_parameters('CAB20', p=3, tabu_tenure_range=[4, 5, 6, 7], num_runs=2)
+    results_cab20_p3 = test_fixed_parameters('CAB20', p=3, tabu_tenure_range=[4, 5, 6, 7], num_runs=5)
     all_results.append(results_cab20_p3)
     save_results(results_cab20_p3, 'tabu_CAB20_p3_results.csv')
     
     # Test CAB20 with p=5
-    results_cab20_p5 = test_fixed_parameters('CAB20', p=5, tabu_tenure_range=[8, 9, 10, 11], num_runs=2)
+    results_cab20_p5 = test_fixed_parameters('CAB20', p=5, tabu_tenure_range=[8, 9, 10, 11], num_runs=5)
     all_results.append(results_cab20_p5)
     save_results(results_cab20_p5, 'tabu_CAB20_p5_results.csv')
     
     # Test CAB25 with p=3
-    results_cab25_p3 = test_fixed_parameters('CAB25', p=3, tabu_tenure_range=[5, 6, 7, 8], num_runs=2)
+    results_cab25_p3 = test_fixed_parameters('CAB25', p=3, tabu_tenure_range=[5, 6, 7, 8], num_runs=5)
     all_results.append(results_cab25_p3)
     save_results(results_cab25_p3, 'tabu_CAB25_p3_results.csv')
     
     # Test CAB25 with p=5
-    results_cab25_p5 = test_fixed_parameters('CAB25', p=5, tabu_tenure_range=[8, 9, 10, 11], num_runs=2)
+    results_cab25_p5 = test_fixed_parameters('CAB25', p=5, tabu_tenure_range=[8, 9, 10, 11], num_runs=5)
     all_results.append(results_cab25_p5)
     save_results(results_cab25_p5, 'tabu_CAB25_p5_results.csv')
 
-    # Test TR40 with p=3
-    results_tr40_p3 = test_fixed_parameters('TR40', p=3, tabu_tenure_range=[7, 8, 9, 10], num_runs=5)
-    all_results.append(results_tr40_p3)
-    save_results(results_tr40_p3, 'tabu_TR40_p3_results.csv')
+    # Test TR40 with p=4
+    results_tr40_p4 = test_fixed_parameters('TR40', p=4, tabu_tenure_range=[7, 8, 9, 10], num_runs=5)
+    all_results.append(results_tr40_p4)
+    save_results(results_tr40_p4, 'tabu_TR40_p4_results.csv')
     
-    # Test TR40 with p=5
-    results_tr40_p5 = test_fixed_parameters('TR40', p=5, tabu_tenure_range=[10, 11, 12], num_runs=5)
-    all_results.append(results_tr40_p5)
-    save_results(results_tr40_p5, 'tabu_TR40_p5_results.csv')
+    # Test TR40 with p=6
+    results_tr40_p6 = test_fixed_parameters('TR40', p=6, tabu_tenure_range=[10, 11, 12], num_runs=5)
+    all_results.append(results_tr40_p6)
+    save_results(results_tr40_p6, 'tabu_TR40_p6_results.csv')
     
     # Test TR55 with p=5
     results_tr55_p5 = test_fixed_parameters('TR55', p=5, tabu_tenure_range=[11, 12, 13], num_runs=5)
@@ -286,15 +300,15 @@ def main():
     all_results.append(results_tr55_p7)
     save_results(results_tr55_p7, 'tabu_TR55_p7_results.csv')
     
-    # # Test RGP100 with p=9
-    # results_rgp100_p9 = test_fixed_parameters('RGP100', p=9, tabu_tenure_range=[17, 18, 19, 20], num_runs=5)
-    # all_results.append(results_rgp100_p9)
-    # save_results(results_rgp100_p9, 'tabu_RGP100_p9_results.csv')
+    # Test RGP100 with p=9
+    results_rgp100_p9 = test_fixed_parameters('RGP100', p=9, tabu_tenure_range=[17, 18, 19, 20], num_runs=5)
+    all_results.append(results_rgp100_p9)
+    save_results(results_rgp100_p9, 'tabu_RGP100_p9_results.csv')
     
-    # # Test RGP100 with p=12
-    # results_rgp100_p12 = test_fixed_parameters('RGP100', p=12, tabu_tenure_range=[21, 22, 23, 24], num_runs=5)
-    # all_results.append(results_rgp100_p12)
-    # save_results(results_rgp100_p12, 'tabu_RGP100_p12_results.csv')
+    # Test RGP100 with p=12
+    results_rgp100_p12 = test_fixed_parameters('RGP100', p=12, tabu_tenure_range=[21, 22, 23, 24], num_runs=5)
+    all_results.append(results_rgp100_p12)
+    save_results(results_rgp100_p12, 'tabu_RGP100_p12_results.csv')
     
     # Combine all results
     combined_results = pd.concat(all_results, ignore_index=True)
@@ -310,7 +324,7 @@ def main():
         'CAB10': [3, 5],
         'CAB20': [3, 5],
         'CAB25': [3, 5],
-        'TR40': [3, 5],
+        'TR40': [4, 6],
         'TR55': [5, 7],
         'RGP100': [9, 12]
     }
@@ -325,6 +339,8 @@ def main():
                 print(f"\n{dataset} - p={best['p']}")
                 print(f"  Best tabu_tenure: {int(best['tabu_tenure'])}")
                 print(f"  Best Solution: {best['best_solution']}")
+                if 'selected_hub_capacities' in best:
+                    print(f"  Selected Hub Capacities: {best['selected_hub_capacities']}")
                 print(f"  Best Cost: {best['best_cost']:.4f}")
                 print(f"  Avg Cost: {best['avg_cost']:.4f}")
                 print(f"  Std Dev: {best['std_cost']:.4f}")
@@ -344,6 +360,8 @@ def main():
     print(f"alpha: {best_overall['alpha']}")
     print(f"tabu_tenure: {int(best_overall['tabu_tenure'])}")
     print(f"Best Solution: {best_overall['best_solution']}")
+    if 'selected_hub_capacities' in best_overall:
+        print(f"Selected Hub Capacities: {best_overall['selected_hub_capacities']}")
     print(f"Average Cost: {best_overall['avg_cost']:.4f}")
     print(f"Std Dev: {best_overall['std_cost']:.4f}")
     print(f"Avg Time: {best_overall['avg_time']:.4f}s")

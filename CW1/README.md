@@ -24,10 +24,17 @@ To run the application, execute the following command:
 python src/main.py
 ```
 
-To run the parameter tuning for Tabu Search, navigate to the `B286266_code\CW1` directory and execute:
+To run the parameter tuning for Tabu Search or Simulated Annealing, navigate to the `B286266_code\CW1` directory and execute the corresponding commads:
 ```
-python -m src.parameter_tuning
+python -m src.parameter_tuning_tabu
+python -m src.parameter_tuning_SA
 ```
+
+This generates a results file at:
+```
+results/[Tabu/SA]_all_results.csv
+```
+
 
 ## Testing
 
