@@ -5,10 +5,6 @@ This study investigates two metaheuristic approaches namely Tabu Search (TS) and
 
 ## Installation
 
-<!-- 1. Clone the repository:
-   ```
-   git clone https://github.com/Sarthak-Vishnu/B286266_code.git
-   ``` -->
 1. Navigate to the project directory:
    ```
    cd CW1
