@@ -10,7 +10,6 @@ This module contains various optimization algorithms including:
 import copy
 import math
 import time
-import numpy as np
 from .functions import *
 import random
 
@@ -72,7 +71,7 @@ def tabu_search(
     iteration = 0
     iterations_without_improvement = 0
     max_iterations_without_improvement = int(0.1 * max_iterations)  # W-rule: W = 0.1 × N
-    progress_interval = 10
+    # progress_interval = 10
     
     # Continue while both stopping conditions are not met
     while iteration < max_iterations and iterations_without_improvement < max_iterations_without_improvement:
@@ -143,8 +142,8 @@ def tabu_search(
                 iterations_without_improvement += 1  # Increment W-rule counter
         
         iteration += 1  # Increment N-rule counter
-        if iteration % progress_interval == 0:
-            print(f"Tabu Search progress: iteration {iteration}/{max_iterations}")
+        # if iteration % progress_interval == 0:
+        #     print(f"Tabu Search progress: iteration {iteration}/{max_iterations}")
     
     end_time = time.time()
     execution_time = end_time - start_time
@@ -155,29 +154,27 @@ def tabu_search(
 
 
 def _generate_random_neighbor(current_solution, n):
-    """Generate a random neighbor using NS1/NS2; returns None if no valid move."""
-    if random.random() < 0.5:
-        # NS1
-        spokes = [i for i in range(1, n + 1) if i not in current_solution]
-        if not spokes:
-            return None
-        spoke = random.choice(spokes)
-        return NS1(current_solution, spoke)
-
-    # NS2
+    """Generate ONE random neighbor via NS1 or NS2 — O(1), not O(n²)."""
     hubs = list(set(current_solution))
     spokes = [i for i in range(1, n + 1) if i not in hubs]
+
     if not spokes:
         return None
+
     spoke = random.choice(spokes)
-    hub_candidates = [h for h in hubs if h != current_solution[spoke - 1]]
-    if not hub_candidates:
-        return None
-    hub = random.choice(hub_candidates)
-    return NS2(current_solution, spoke, hub)
+
+    # 50/50 chance of NS1 vs NS2
+    if random.random() < 0.5:
+        return NS1(current_solution, spoke)
+    else:
+        other_hubs = [h for h in hubs if h != current_solution[spoke - 1]]
+        if not other_hubs:
+            return NS1(current_solution, spoke)
+        return NS2(current_solution, spoke, random.choice(other_hubs))
 
 
 def _compute_initial_temperature(
+    n,
     current_solution,
     w,
     c,
@@ -205,7 +202,7 @@ def _compute_initial_temperature(
     count = 0
 
     for _ in range(n_samples):
-        neighbor = _generate_random_neighbor(current_solution, len(current_solution))
+        neighbor = _generate_random_neighbor(current_solution, n)
         if neighbor is None:
             continue
         delta_cost = (
@@ -234,7 +231,7 @@ def _compute_initial_temperature(
 
 def simulated_annealing(n, p, w, c, alpha,
                         initial_temp=None,
-                        delta=0.1,
+                        beta=0.95,
                         max_iterations=1000,
                         p0=0.8,
                         n_samples=50,
@@ -252,7 +249,8 @@ def simulated_annealing(n, p, w, c, alpha,
         c (DataFrame): Cost/distance matrix
         alpha (float): Discount factor
         initial_temp (float|None): Initial temperature. If None, compute using p0 and n_samples.
-        delta (float): Empirical distance parameter
+        beta (float): Geometric cooling factor (0 < beta < 1)
+        sl (float): Stage-length factor; stage length = int(sl * n)
         max_iterations (int): Maximum number of iterations (N-rule)
         p0 (float): Target acceptance probability for uphill moves (0 < p0 < 1)
         n_samples (int): Number of random neighbors to estimate initial temperature
@@ -283,6 +281,7 @@ def simulated_annealing(n, p, w, c, alpha,
     # Temperature
     if initial_temp is None:
         temperature = _compute_initial_temperature(
+            n,
             current_solution,
             w,
             c,
@@ -297,93 +296,62 @@ def simulated_annealing(n, p, w, c, alpha,
     else:
         temperature = initial_temp
 
-    # Temperature-based stopping rule: Tf = 1e-3 * T0
+    if beta <= 0 or beta >= 1:
+        raise ValueError("beta must be between 0 and 1 (exclusive).")
+
+    # Compute final temperature so it's only reached at max_iterations:
+    # Tf = T0 * beta**max_iterations — guaranteed not to trigger early
     initial_temperature = max(float(temperature), 1e-12)
-    final_temperature = 1e-3 * initial_temperature
-    
-    # Compound stopping rule variables
+    final_temperature = initial_temperature * (beta ** max_iterations)
+
+    # Safety net: clamp to avoid floating point underflow to exactly 0
+    final_temperature = max(final_temperature, 1e-300)
+
+    # Iteration counter
     iteration = 0
-    iterations_without_improvement = 0
-    max_iterations_without_improvement = int(0.1 * max_iterations)  # W-rule
 
-    # Temperature stage length for sigma_i estimation (objective variations)
-    stage_length = max(5, min(25, n))
-    
-    # Continue while both stopping conditions are not met
-    while (
-        iteration < max_iterations
-        and iterations_without_improvement < max_iterations_without_improvement
-        and temperature > final_temperature
-    ):
-        # Collect objective variations in current temperature stage
-        stage_variations = []
+    # Classical SA: perform up to max_iterations moves, cooling every iteration
+    while iteration < max_iterations and temperature > final_temperature:
+        # Randomly select neighborhood
+        neighbor = _generate_random_neighbor(current_solution, n)
+        if neighbor is None:
+            iteration += 1
+            # still cool every iteration
+            temperature *= beta
+            continue
 
-        for _ in range(stage_length):
-            if (
-                iteration >= max_iterations
-                or iterations_without_improvement >= max_iterations_without_improvement
-            ):
-                break
+        neighbor_cost = cost_evaluation(
+            neighbor,
+            w,
+            c,
+            alpha,
+            dataset_name=dataset_name,
+            capacities=capacities,
+            fixed_costs=fixed_costs,
+        )
+        delta_cost = neighbor_cost - current_cost
 
-            # Randomly select neighborhood
-            neighbor = _generate_random_neighbor(current_solution, n)
-            if neighbor is None:
-                iteration += 1
-                continue
+        # Acceptance criterion
+        if delta_cost < 0:
+            # Accept improving solution
+            current_solution = neighbor
+            current_cost = neighbor_cost
 
-            neighbor_cost = cost_evaluation(
-                neighbor,
-                w,
-                c,
-                alpha,
-                dataset_name=dataset_name,
-                capacities=capacities,
-                fixed_costs=fixed_costs,
-            )
-            delta_cost = neighbor_cost - current_cost
-            stage_variations.append(delta_cost)
-
-            # Acceptance criterion
-            if delta_cost < 0:
-                # Accept improving solution
+            if current_cost < best_cost:
+                best_solution = copy.deepcopy(current_solution)
+                best_cost = current_cost
+        else:
+            # Probabilistic acceptance
+            safe_temperature = max(temperature, 1e-12)
+            acceptance_probability = math.exp(-delta_cost / safe_temperature)
+            if random.random() < acceptance_probability:
                 current_solution = neighbor
                 current_cost = neighbor_cost
 
-                if current_cost < best_cost:
-                    best_solution = copy.deepcopy(current_solution)
-                    best_cost = current_cost
-                    iterations_without_improvement = 0
-                else:
-                    iterations_without_improvement += 1
-            else:
-                # Probabilistic acceptance
-                safe_temperature = max(temperature, 1e-12)
-                acceptance_probability = math.exp(-delta_cost / safe_temperature)
-                if random.random() < acceptance_probability:
-                    current_solution = neighbor
-                    current_cost = neighbor_cost
-                    iterations_without_improvement += 1
-                else:
-                    iterations_without_improvement += 1
+        iteration += 1
 
-            iteration += 1
-
-        # Compute sigma_i from objective variations observed in this temperature stage
-        if len(stage_variations) > 1:
-            sigma_i = float(np.std(stage_variations))
-        else:
-            sigma_i = 0.0
-
-        # Temperature update (Van Laarhoven & Aarts non-adaptive schedule)
-        if sigma_i > 0 and np.isfinite(sigma_i) and temperature > 0:
-            denominator = 1 + (temperature * math.log(1 + delta)) / (3 * sigma_i)
-            if denominator > 0 and np.isfinite(denominator):
-                temperature = temperature / denominator
-            else:
-                break
-        else:
-            # If there is no variation, search is effectively frozen at this stage
-            break
+        # Geometric cooling every iteration (classical SA)
+        temperature *= beta
     
     end_time = time.time()
     execution_time = end_time - start_time

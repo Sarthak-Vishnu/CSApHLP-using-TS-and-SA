@@ -3,7 +3,8 @@ Module: parameter_tuning_tabu.py
 Description: Parameter tuning for Tabu Search algorithm to find optimal settings
 
 This module tests different parameter combinations for the Tabu Search algorithm
-and identifies the best parameters based on solution quality and execution time.
+and identifies the best parameters using best_cost as the primary criterion,
+with avg_cost used as a tie-breaker.
 """
 
 import pandas as pd
@@ -218,6 +219,11 @@ def test_fixed_parameters(dataset_name, p, tabu_tenure_range, num_runs=5):
     return pd.DataFrame(results)
 
 
+def select_best_config_index(results_df):
+    """Select best row by best_cost, using avg_cost as tie-breaker."""
+    return results_df.sort_values(by=['best_cost', 'avg_cost'], ascending=[True, True]).index[0]
+
+
 def main():
     """Main function for parameter tuning with fixed parameters"""
     
@@ -233,8 +239,8 @@ def main():
     }
     
     # Test configurations
-    # For p=3: tabu_tenure = [5, 7, 9]
-    # For p=5: tabu_tenure = [7, 8, 9, 10]
+    # For p=3: tabu_tenure = [4, 5, 6, 7]
+    # For p=4: tabu_tenure = [6, 7, 8, 9]
     
     all_results = []
     
@@ -253,75 +259,76 @@ def main():
     # Test CAB10 with p=3
     results_cab10_p3 = test_fixed_parameters('CAB10', p=3, tabu_tenure_range=[4, 5, 6, 7], num_runs=5)
     all_results.append(results_cab10_p3)
-    save_results(results_cab10_p3, 'tabu_CAB10_p3_results.csv')
+    # save_results(results_cab10_p3, 'tabu_CAB10_p3_results.csv')
     
-    # Test CAB10 with p=5
-    results_cab10_p5 = test_fixed_parameters('CAB10', p=5, tabu_tenure_range=[6, 7, 8, 9], num_runs=5)
-    all_results.append(results_cab10_p5)
-    save_results(results_cab10_p5, 'tabu_CAB10_p5_results.csv')
+    # Test CAB10 with p=4
+    results_cab10_p4 = test_fixed_parameters('CAB10', p=4, tabu_tenure_range=[6, 7, 8, 9], num_runs=5)
+    all_results.append(results_cab10_p4)
+    # save_results(results_cab10_p4, 'tabu_CAB10_p4_results.csv')
     
     # Test CAB20 with p=3
     results_cab20_p3 = test_fixed_parameters('CAB20', p=3, tabu_tenure_range=[4, 5, 6, 7], num_runs=5)
     all_results.append(results_cab20_p3)
-    save_results(results_cab20_p3, 'tabu_CAB20_p3_results.csv')
+    # save_results(results_cab20_p3, 'tabu_CAB20_p3_results.csv')
     
     # Test CAB20 with p=5
     results_cab20_p5 = test_fixed_parameters('CAB20', p=5, tabu_tenure_range=[8, 9, 10, 11], num_runs=5)
     all_results.append(results_cab20_p5)
-    save_results(results_cab20_p5, 'tabu_CAB20_p5_results.csv')
+    # save_results(results_cab20_p5, 'tabu_CAB20_p5_results.csv')
     
     # Test CAB25 with p=3
     results_cab25_p3 = test_fixed_parameters('CAB25', p=3, tabu_tenure_range=[5, 6, 7, 8], num_runs=5)
     all_results.append(results_cab25_p3)
-    save_results(results_cab25_p3, 'tabu_CAB25_p3_results.csv')
+    # save_results(results_cab25_p3, 'tabu_CAB25_p3_results.csv')
     
     # Test CAB25 with p=5
     results_cab25_p5 = test_fixed_parameters('CAB25', p=5, tabu_tenure_range=[8, 9, 10, 11], num_runs=5)
     all_results.append(results_cab25_p5)
-    save_results(results_cab25_p5, 'tabu_CAB25_p5_results.csv')
+    # save_results(results_cab25_p5, 'tabu_CAB25_p5_results.csv')
 
     # Test TR40 with p=4
     results_tr40_p4 = test_fixed_parameters('TR40', p=4, tabu_tenure_range=[7, 8, 9, 10], num_runs=5)
     all_results.append(results_tr40_p4)
-    save_results(results_tr40_p4, 'tabu_TR40_p4_results.csv')
+    # save_results(results_tr40_p4, 'tabu_TR40_p4_results.csv')
     
     # Test TR40 with p=6
     results_tr40_p6 = test_fixed_parameters('TR40', p=6, tabu_tenure_range=[10, 11, 12], num_runs=5)
     all_results.append(results_tr40_p6)
-    save_results(results_tr40_p6, 'tabu_TR40_p6_results.csv')
+    # save_results(results_tr40_p6, 'tabu_TR40_p6_results.csv')
     
     # Test TR55 with p=5
     results_tr55_p5 = test_fixed_parameters('TR55', p=5, tabu_tenure_range=[11, 12, 13], num_runs=5)
     all_results.append(results_tr55_p5)
-    save_results(results_tr55_p5, 'tabu_TR55_p5_results.csv')
+    # save_results(results_tr55_p5, 'tabu_TR55_p5_results.csv')
     
     # Test TR55 with p=7
     results_tr55_p7 = test_fixed_parameters('TR55', p=7, tabu_tenure_range=[12, 13, 14, 15], num_runs=5)
     all_results.append(results_tr55_p7)
-    save_results(results_tr55_p7, 'tabu_TR55_p7_results.csv')
+    # save_results(results_tr55_p7, 'tabu_TR55_p7_results.csv')
     
     # Test RGP100 with p=9
     results_rgp100_p9 = test_fixed_parameters('RGP100', p=9, tabu_tenure_range=[17, 18, 19, 20], num_runs=5)
     all_results.append(results_rgp100_p9)
-    save_results(results_rgp100_p9, 'tabu_RGP100_p9_results.csv')
+    # save_results(results_rgp100_p9, 'tabu_RGP100_p9_results.csv')
     
     # Test RGP100 with p=12
     results_rgp100_p12 = test_fixed_parameters('RGP100', p=12, tabu_tenure_range=[21, 22, 23, 24], num_runs=5)
     all_results.append(results_rgp100_p12)
-    save_results(results_rgp100_p12, 'tabu_RGP100_p12_results.csv')
+    # save_results(results_rgp100_p12, 'tabu_RGP100_p12_results.csv')
     
     # Combine all results
     combined_results = pd.concat(all_results, ignore_index=True)
-    save_results(combined_results, 'tabu_all_results.csv')
+    save_results(combined_results, 'Param_tuning_tabu.csv')
     
     # Print summary
     print("\n" + "="*70)
     print("BEST PARAMETERS SUMMARY")
     print("="*70)
+    print("Selection rule: lowest best_cost; if tied, lowest avg_cost")
     
     # Best for each dataset-p combination
     summary_p_values = {
-        'CAB10': [3, 5],
+        'CAB10': [3, 4],
         'CAB20': [3, 5],
         'CAB25': [3, 5],
         'TR40': [4, 6],
@@ -334,7 +341,7 @@ def main():
             subset = combined_results[(combined_results['dataset'] == dataset) & 
                                      (combined_results['p'] == p)]
             if len(subset) > 0:
-                best_idx = subset['avg_cost'].idxmin()
+                best_idx = select_best_config_index(subset)
                 best = combined_results.loc[best_idx]
                 print(f"\n{dataset} - p={best['p']}")
                 print(f"  Best tabu_tenure: {int(best['tabu_tenure'])}")
@@ -352,7 +359,8 @@ def main():
     print("\n" + "="*70)
     print("OVERALL BEST CONFIGURATION")
     print("="*70)
-    best_overall_idx = combined_results['avg_cost'].idxmin()
+    print("Selection rule: lowest best_cost; if tied, lowest avg_cost")
+    best_overall_idx = select_best_config_index(combined_results)
     best_overall = combined_results.loc[best_overall_idx]
     print(f"Dataset: {best_overall['dataset']}")
     print(f"p: {int(best_overall['p'])}")

@@ -107,21 +107,16 @@ def save_results(results_df, filename="SA_all_results.csv"):
     print(f"\nResults saved to: {output_path}")
 
 
-def test_sa_parameters(dataset_name, p, sa_param_grid, num_runs=3):
+def test_sa_parameters(dataset_name, p, sa_param_grid, num_runs=5):
     """Test SA parameter combinations for one dataset/p combination."""
     w, c, n = load_dataset(dataset_name)
 
-    fixed_max_iterations = {
-        "CAB10": 500,
-        "CAB20": 500,
-        "CAB25": 800,
-        "TR40": 1000,
-        "TR55": 1000,
-        "RGP100": 1000,
-    }
+    levels = 10
+    sl = 10
+    stage_length = sl * n
+    max_iterations = levels * stage_length
 
     alpha = 0.3
-    max_iterations = fixed_max_iterations[dataset_name]
 
     results = []
     total_tests = len(sa_param_grid)
@@ -129,16 +124,17 @@ def test_sa_parameters(dataset_name, p, sa_param_grid, num_runs=3):
 
     print(f"\n{'='*70}")
     print(f"Testing {dataset_name} - p={p}, max_iterations={max_iterations}, alpha={alpha}")
+    print(f"Using LEVELS={levels}, sl={sl}, stage_length={stage_length}")
     print(f"{'='*70}")
 
     for params in sa_param_grid:
         test_count += 1
         initial_temp = params["initial_temp"]
-        delta = params["delta"]
+        beta = params["beta"]
         p0 = params["p0"]
         n_samples = params["n_samples"]
 
-        print(f"\n[{test_count}/{total_tests}] Testing initial_temp={initial_temp}, delta={delta}, p0={p0}, n_samples={n_samples}...")
+        print(f"\n[{test_count}/{total_tests}] Testing initial_temp={initial_temp}, beta={beta}, sl={sl}, p0={p0}, n_samples={n_samples}...")
 
         costs = []
         times = []
@@ -153,7 +149,7 @@ def test_sa_parameters(dataset_name, p, sa_param_grid, num_runs=3):
                 c=c,
                 alpha=alpha,
                 initial_temp=initial_temp,
-                delta=delta,
+                beta=beta,
                 max_iterations=max_iterations,
                 p0=p0,
                 n_samples=n_samples,
@@ -181,8 +177,11 @@ def test_sa_parameters(dataset_name, p, sa_param_grid, num_runs=3):
                 "p": p,
                 "alpha": alpha,
                 "max_iterations": max_iterations,
+                "levels": levels,
                 "initial_temp": initial_temp,
-                "delta": delta,
+                "beta": beta,
+                "sl": sl,
+                "stage_length": stage_length,
                 "p0": p0,
                 "n_samples": n_samples,
                 "best_solution": best_solution,
@@ -205,35 +204,60 @@ def test_sa_parameters(dataset_name, p, sa_param_grid, num_runs=3):
 
     return pd.DataFrame(results)
 
+# Round 1 candidates
+    # beta_candidates = {
+    #     "CAB10": [0.80, 0.85, 0.90, 0.95],
+    #     "CAB20": [0.85, 0.90, 0.95, 0.97],
+    #     "CAB25": [0.88, 0.92, 0.95, 0.97],
+    #     "TR40": [0.90, 0.94, 0.96, 0.98],
+    #     "TR55": [0.92, 0.95, 0.97, 0.98],
+    #     "RGP100": [0.94, 0.96, 0.98, 0.99],
+    # }
+# Round 2 candidates
+    # beta_candidates = {
+    #     ("CAB10", 3): [0.92, 0.97, 0.99],           # confirm 0.90 is true optimum
+    #     ("CAB10", 4): [0.97, 0.99, 0.995],           # rising at 0.95
+    #     ("CAB20", 3): [0.98, 0.99, 0.995],           # rising at 0.97
+    #     ("CAB20", 5): [0.98, 0.99, 0.995],           # big jump at 0.97
+    #     ("CAB25", 3): [0.70, 0.75, 0.80, 0.85],      # 0.88 was best, never tested below
+    #     ("CAB25", 5): [0.98, 0.99, 0.995],           # rising at 0.97
+    #     ("TR40",  4): [0.99, 0.995, 0.999],          # 15% gap vs TS, far from converged
+    #     ("TR40",  6): [0.99, 0.995, 0.999],          # 10% gap vs TS
+    #     ("TR55",  5): [0.99, 0.995, 0.999],          # 29% gap vs TS — critical
+    #     ("TR55",  7): [0.99, 0.995, 0.999],          # 19% gap vs TS
+    #     ("RGP100", 9):  [0.995, 0.999],              # already at 0.99, marginal improvement
+    #     ("RGP100", 12): [0.995, 0.999],              # same
+    # }
+def build_sa_grid(dataset_name, p):
+    """Final SA tuning grid — 4 candidates per (dataset, p)."""
+    p0 = 0.8
+    n_samples = 50
 
-def build_sa_grid(dataset_name):
-    """Create SA tuning grid where delta is the tuned parameter per dataset."""
-    delta_candidates = {
-        "CAB10": [0.01, 0.05, 0.1],
-        "CAB20": [0.01, 0.05, 0.1],
-        "CAB25": [0.01, 0.05, 0.1],
-        "TR40": [0.01, 0.03, 0.05],
-        "TR55": [0.005, 0.01, 0.05],
-        "RGP100": [0.005, 0.01, 0.03],
+    beta_candidates = {
+        ("CAB10",  3): [0.97, 0.98, 0.990, 0.995],   # best=0.99
+        ("CAB10",  4): [0.98, 0.99, 0.995, 0.999],   # best=0.995/0.999
+        ("CAB20",  3): [0.97, 0.98, 0.990, 0.995],   # best=0.99/0.995
+        ("CAB20",  5): [0.96, 0.97, 0.980, 0.990],   # best=0.98/0.97
+        ("CAB25",  3): [0.75, 0.80, 0.850, 0.900],   # best=0.80/0.85
+        ("CAB25",  5): [0.96, 0.97, 0.980, 0.990],   # best=0.98/0.96
+        ("TR40",   4): [0.97, 0.98, 0.990, 0.995],   # best=0.99
+        ("TR40",   6): [0.98, 0.99, 0.995, 0.999],   # best=0.995/0.98
+        ("TR55",   5): [0.97, 0.98, 0.990, 0.995],   # best=0.99/0.995
+        ("TR55",   7): [0.98, 0.99, 0.995, 0.999],   # best=0.995
+        ("RGP100", 9): [0.99, 0.995, 0.999, 0.9995], # best=0.995
+        ("RGP100",12): [0.99, 0.995, 0.999, 0.9995], # best=0.999/0.99
     }
 
-    # Keep other SA controls fixed while tuning delta
-    if dataset_name in ["CAB10", "CAB20", "CAB25"]:
-        p0 = 0.8
-        n_samples = 50
-    else:
-        p0 = 0.8
-        n_samples = 60
-
+    betas = beta_candidates.get((dataset_name, p), [])
     return [
-        {
-            "initial_temp": None,
-            "delta": delta,
-            "p0": p0,
-            "n_samples": n_samples,
-        }
-        for delta in delta_candidates[dataset_name]
+        {"initial_temp": None, "beta": beta, "p0": p0, "n_samples": n_samples}
+        for beta in betas
     ]
+
+
+def select_best_config_index(results_df):
+    """Select best row by best_cost, using avg_cost as tie-breaker."""
+    return results_df.sort_values(by=["best_cost", "avg_cost"], ascending=[True, True]).index[0]
 
 
 def main():
@@ -241,28 +265,22 @@ def main():
     all_results = []
 
     alpha = 0.3
-    fixed_max_iterations = {
-        "CAB10": 500,
-        "CAB20": 500,
-        "CAB25": 800,
-        "TR40": 1000,
-        "TR55": 1000,
-        "RGP100": 1000,
-    }
+    levels = 10
+    sl = 10
 
     dataset_p_pairs = [
         ("CAB10", 3),
-        ("CAB10", 5),
-        # ("CAB20", 3),
-        # ("CAB20", 5),
-        # ("CAB25", 3),
-        # ("CAB25", 5),
-        # ("TR40", 4),
-        # ("TR40", 6),
-        # ("TR55", 5),
-        # ("TR55", 7),
-        # ("RGP100", 9),
-        # ("RGP100", 12),
+        ("CAB10", 4),
+        ("CAB20", 3),
+        ("CAB20", 5),
+        ("CAB25", 3),
+        ("CAB25", 5),
+        ("TR40", 4),
+        ("TR40", 6),
+        ("TR55", 5),
+        ("TR55", 7),
+        ("RGP100", 9),
+        ("RGP100", 12),
     ]
 
     print("\n" + "="*70)
@@ -270,32 +288,36 @@ def main():
     print("="*70)
     print(f"\nFixed Parameters:")
     print(f"  Alpha: {alpha}")
-    print(f"  Max Iterations - CAB10: {fixed_max_iterations['CAB10']}, "
-          f"CAB20: {fixed_max_iterations['CAB20']}, "
-          f"CAB25: {fixed_max_iterations['CAB25']}, "
-          f"TR40: {fixed_max_iterations['TR40']}, "
-          f"TR55: {fixed_max_iterations['TR55']}, "
-          f"RGP100: {fixed_max_iterations['RGP100']}")
+    print(f"  LEVELS: {levels}")
+    print(f"  sl: {sl}")
+    print(f"  stage_length = sl * n")
+    print(f"  max_iterations = LEVELS * stage_length")
+    print(f"  p0: 0.8")
+    print(f"  n_samples: 50")
 
     for dataset_name, p in dataset_p_pairs:
-        sa_grid = build_sa_grid(dataset_name)
+        sa_grid = build_sa_grid(dataset_name, p)
+        if not sa_grid:
+            print(f"Skipping {dataset_name} p={p} — already converged.")
+            continue
         result_df = test_sa_parameters(
             dataset_name=dataset_name,
             p=p,
             sa_param_grid=sa_grid,
-            num_runs=3,
+            num_runs=5,
         )
         all_results.append(result_df)
 
     combined_results = pd.concat(all_results, ignore_index=True)
-    save_results(combined_results, filename="SA_all_results.csv")
+    save_results(combined_results, filename="Param_tuning_SA.csv")
 
     print("\n" + "=" * 70)
     print("BEST SA PARAMETERS SUMMARY")
     print("=" * 70)
+    print("Selection rule: lowest best_cost; if tied, lowest avg_cost")
 
     summary_p_values = {
-        "CAB10": [3, 5],
+        "CAB10": [3, 4],
         "CAB20": [3, 5],
         "CAB25": [3, 5],
         "TR40": [4, 6],
@@ -308,11 +330,12 @@ def main():
             subset = combined_results[(combined_results["dataset"] == dataset) &
                                      (combined_results["p"] == p)]
             if len(subset) > 0:
-                best_idx = subset["avg_cost"].idxmin()
+                best_idx = select_best_config_index(subset)
                 best = combined_results.loc[best_idx]
                 print(f"\n{dataset} - p={best['p']}")
                 print(f"  Best SA Params: initial_temp={best['initial_temp']}, "
-                      f"delta={best['delta']}, p0={best['p0']}, n_samples={int(best['n_samples'])}")
+                    f"beta={best['beta']}, levels={int(best['levels'])}, sl={best['sl']}, "
+                    f"stage_length={int(best['stage_length'])}, p0={best['p0']}, n_samples={int(best['n_samples'])}")
                 print(f"  Best Solution: {best['best_solution']}")
                 if "selected_hub_capacities" in best:
                     print(f"  Selected Hub Capacities: {best['selected_hub_capacities']}")
@@ -326,14 +349,18 @@ def main():
     print("\n" + "=" * 70)
     print("OVERALL BEST CONFIGURATION")
     print("=" * 70)
-    best_overall_idx = combined_results["avg_cost"].idxmin()
+    print("Selection rule: lowest best_cost; if tied, lowest avg_cost")
+    best_overall_idx = select_best_config_index(combined_results)
     best_overall = combined_results.loc[best_overall_idx]
     print(f"Dataset: {best_overall['dataset']}")
     print(f"p: {int(best_overall['p'])}")
     print(f"max_iterations: {int(best_overall['max_iterations'])}")
+    print(f"levels: {int(best_overall['levels'])}")
     print(f"alpha: {best_overall['alpha']}")
     print(f"initial_temp: {best_overall['initial_temp']}")
-    print(f"delta: {best_overall['delta']}")
+    print(f"beta: {best_overall['beta']}")
+    print(f"sl: {best_overall['sl']}")
+    print(f"stage_length: {int(best_overall['stage_length'])}")
     print(f"p0: {best_overall['p0']}")
     print(f"n_samples: {int(best_overall['n_samples'])}")
     print(f"Best Solution: {best_overall['best_solution']}")
