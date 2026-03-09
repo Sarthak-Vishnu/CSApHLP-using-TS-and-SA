@@ -37,6 +37,7 @@ To check and visualize the cooling schedule curve used in Simulated Annealing, r
 python -m src.debug_sa
 ```
 
+All the visualizations are in the `\src\visualization.ipynb` notebook and the corresponding generated figures are stored in the `\src\visualization` directory.
 
 ## Testing
 
